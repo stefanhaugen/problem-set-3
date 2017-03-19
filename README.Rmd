@@ -1,6 +1,6 @@
 ---
 title: "Problem Set 3. Due Thurs March 2 5pm"
-author: "Student name"
+author: "Stefan Haugen"
 date: "Feb 23, 2017"
 output: html_document
 ---
@@ -84,12 +84,15 @@ The key steps are to `gather()` the data into key-value pairs and then `separate
 
 ```{r problem_1}
 # add tidying code here
+library(stringr)
+raw_data %>% gather(key, value, -gene.name) %>% separate(key, into = c('plant', 'fungus', 'time.point', 'rep'), sep = '_') -> cleaned_data
+cleaned_data %>% mutate(time.point = str_replace(time.point, 'hpi', ''), time.point = str_c('hpi.', time.point))
 
 # report the cleaned_data by just naming it, uncomment the following line:
-# cleaned_data
+cleaned_data
 ```
 
-## Problem 3
+## Problem 2
 
 You need to translate what you learned on the command line into the R world.
 
@@ -101,6 +104,14 @@ raw_data | awk '$4 == "6hpi"' | sort -k6nr | head -n 1 | cut -f2
 
 ```{r}
 # translate to dplyr code
+library(stringr)
+library(dplyr)
+raw_data %>% gather(key, value, -gene.name) %>% separate(key, into = c('plant', 'fungus', 'time.point', 'rep'), sep = '_') -> cleaned_data
+cleaned_data %>% mutate(time.point = str_replace(time.point, 'hpi', ''), time.point = str_c('hpi.', time.point))
+
+
+cleaned_data %>% arrange(time.point, desc(value)) %>% group_by(time.point = 'hpi.6') %>% head(1)
+
 ```
 
 Which plant / fungus pair has the highest expression in the 18hpi time point?
@@ -111,6 +122,10 @@ raw_data | awk '$4 == "18hpi"' | sort -k6nr | head -n 1 | cut -f2,3
 
 ```{r}
 # translate to dplyr code
+
+cleaned_data %>% arrange(time.point, desc(value)) %>% group_by(time.point = 'hpi.18') %>% head(1) %>% select(plant, fungus)
+
+
 ```
 
 ## Problem 3
@@ -128,21 +143,39 @@ Identify the top 3 most consistently differentially expressed genes between the 
 ```{r reformat_time, eval=FALSE}
 cleaned_data %>%
   mutate(time.value = str_replace(time.point, 'hpi', ''),
-         time.hpi = str_c('hpi.', time.value))
+         time.hpi = str_c('hpi.', time.value)) -> cleaned_data2
+
+cleaned_data2
 ```
 
 2. Create a new column containing the expression difference between the relevant time points.
-
+```{r new_column, eval=FALSE}
+cleaned_data2 %>% select(-time.value, -time.point) %>% spread(time.hpi, value) %>% mutate(exp_diff = hpi.24 - hpi.6) -> cleaned_expdiff
+cleaned_expdiff
+```
 3. Calculate summary statistics (mean and variance) of the expression differences by grouping (hint) the `gene.name`, `plant`, and `virus` columns.
-
+```{r summ statistics, eval = FALSE}
+cleaned_expdiff %>% group_by(gene.name, plant, fungus) %>% summarise(mean = mean(exp_diff), var = var(exp_diff)) -> summ_stats
+summ_stats
+```
 4. Sort by these statistics and use the `dplyr` verb `slice` to pull the ones you want (i.e., the top 3). Note you will have to remove `gene.name` from the grouping so that sorting works.
 
-```{r problem_3}
+```{r 3subset4}
+summ_stats %>% ungroup() %>% select(-gene.name) %>% arrange(desc(mean, var)) %>% slice(1:3)
 ```
 
 ## Problem 4
 
 Now examine the above final data frame above and write a few sentences putting inline code in least 3 places. For example, There are `r nrow(mtcars)` rows of data in `mtcars`.
+
+
+```{r 4}
+
+`r cleaned_data %>% summarise(n_distinct(gene.name))` distinct genes were analyzed across `r cleaned_data %>% summarise(n_distinct(plant))` different plant species, as well as `r cleaned_data2 %>% summarise(n_distinct(fungus))` fungus variants. It was discovered that the most variably expressed were: `r summ_stats %>% ungroup() %>% select(-gene.name) %>% arrange(desc(mean, var)) %>% slice(1:3)`
+
+##I'm not exactly sure how to use the `r ` inline text concept.. Would I keep it out of the ``` partitioned section?
+
+```
 
 ## Problem 5
 
@@ -159,4 +192,7 @@ Plot the expression (`value`) by time (`hpi`) for the above genes. Format the pl
 Extra credit: add error bars to the plot (use `geom_errorbar`).
 
 ```{r problem_5}
+
+topgeneplot %>% ggplot(aes(time.point, value, color = gene.name, shape = rep)) + geom_point()
+## I'm unsure how to add a geom_smooth line between points? also the facet portion?
 ```
