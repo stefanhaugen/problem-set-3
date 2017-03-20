@@ -140,7 +140,7 @@ Identify the top 3 most consistently differentially expressed genes between the 
 
 1. Create a new table from the cleaned data by moving each `hpi` value to a new column name, with counts for each in the column (hint: use a `tidyr` verb). It is helpful to reformat the `hpi` values by converting from e.g. `6hpi` to `hpi.6`. You can use `mutate` to do this, i.e.:
 
-```{r reformat_time, eval=FALSE}
+```{r reformat_time}
 cleaned_data %>%
   mutate(time.value = str_replace(time.point, 'hpi', ''),
          time.hpi = str_c('hpi.', time.value)) -> cleaned_data2
@@ -149,12 +149,12 @@ cleaned_data2
 ```
 
 2. Create a new column containing the expression difference between the relevant time points.
-```{r new_column, eval=FALSE}
+```{r new_column}
 cleaned_data2 %>% select(-time.value, -time.point) %>% spread(time.hpi, value) %>% mutate(exp_diff = hpi.24 - hpi.6) -> cleaned_expdiff
 cleaned_expdiff
 ```
 3. Calculate summary statistics (mean and variance) of the expression differences by grouping (hint) the `gene.name`, `plant`, and `virus` columns.
-```{r summ statistics, eval = FALSE}
+```{r summ statistics}
 cleaned_expdiff %>% group_by(gene.name, plant, fungus) %>% summarise(mean = mean(exp_diff), var = var(exp_diff)) -> summ_stats
 summ_stats
 ```
