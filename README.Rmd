@@ -161,21 +161,17 @@ summ_stats
 4. Sort by these statistics and use the `dplyr` verb `slice` to pull the ones you want (i.e., the top 3). Note you will have to remove `gene.name` from the grouping so that sorting works.
 
 ```{r 3subset4}
-summ_stats %>% ungroup() %>% select(-gene.name) %>% arrange(desc(mean, var)) %>% slice(1:3)
+summ_stats %>% ungroup() %>% select(-gene.name) %>% arrange(desc(mean, var)) %>% slice(1:3) 
+
+summ_stats %>% ungroup() %>% arrange(desc(mean, var)) %>% slice(1:3) %>% select(gene.name) %>% unlist()-> top_genes
 ```
 
 ## Problem 4
 
 Now examine the above final data frame above and write a few sentences putting inline code in least 3 places. For example, There are `r nrow(mtcars)` rows of data in `mtcars`.
 
+`r cleaned_data %>% summarise(n_distinct(gene.name))` distinct genes were analyzed across `r cleaned_data %>% summarise(n_distinct(plant))` different plant species, as well as `r cleaned_data2 %>% summarise(n_distinct(fungus))` fungus variants. It was discovered that the most variably expressed were: `r top_genes[1]`, `r top_genes[2]`, `r top_genes[3]`
 
-```{r 4}
-
-`r cleaned_data %>% summarise(n_distinct(gene.name))` distinct genes were analyzed across `r cleaned_data %>% summarise(n_distinct(plant))` different plant species, as well as `r cleaned_data2 %>% summarise(n_distinct(fungus))` fungus variants. It was discovered that the most variably expressed were: `r summ_stats %>% ungroup() %>% select(-gene.name) %>% arrange(desc(mean, var)) %>% slice(1:3)`
-
-##I'm not exactly sure how to use the `r ` inline text concept.. Would I keep it out of the ``` partitioned section?
-
-```
 
 ## Problem 5
 
@@ -192,7 +188,12 @@ Plot the expression (`value`) by time (`hpi`) for the above genes. Format the pl
 Extra credit: add error bars to the plot (use `geom_errorbar`).
 
 ```{r problem_5}
-
-topgeneplot %>% ggplot(aes(time.point, value, color = gene.name, shape = rep)) + geom_point()
+cleaned_data2 %>% filter(gene.name %in% top_genes) -> topgeneplot
+topgeneplot %>% ggplot(aes(as.numeric(time.value), value, color = gene.name, shape = rep)) + 
+  geom_point() +
+  facet_grid(plant ~ fungus) +
+  labs(title = 'whatever') +
+  theme_bw() +
+  geom_smooth(method = "lm", se = F)
 ## I'm unsure how to add a geom_smooth line between points? also the facet portion?
 ```
